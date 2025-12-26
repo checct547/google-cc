@@ -9,7 +9,7 @@ export const translations = {
     inputFile: '本地上传媒体',
     btnParse: '解析媒体',
     btnUpload: '上传并播放',
-    playerError: '无法直接播放，请尝试下载后播放',
+    playerError: '播放器无法直接解码，建议点击右上方下载图标到本地播放。',
     downloadLink: '下载媒体',
     filterLabel: '提示词过滤级别',
     filterLevels: {
@@ -37,7 +37,9 @@ export const translations = {
       transcription: '转录文本 (SRT)',
       environment: '环境',
       atmosphere: '氛围',
-      audioElements: '音频元素'
+      audioElements: '音频元素',
+      groundingUrls: '参考来源链接',
+      combinedOutput: '综合输出'
     },
     actions: {
       copy: '复制',
@@ -48,9 +50,18 @@ export const translations = {
     status: {
       idle: '就绪',
       parsing: '解析媒体中...',
-      analyzing: 'AI 正在分析并生成结果...',
+      analyzing: 'AI 正在远程分析（通过 Search Grounding）...',
+      localAnalyzing: 'AI 正在分析本地媒体流...',
       error: '发生错误',
-      success: '完成'
+      success: '分析完成'
+    },
+    errors: {
+      platformBlocked: '此链接属于社交平台网页（如 TikTok/YouTube/Instagram）。',
+      remoteAnalysis: 'AI 将启动远程解析模式，通过 Google Search 获取视频内容细节。',
+      analysisAdvice: '为了获取更精确的视觉动作轨迹，推荐下载视频后通过“本地上传”提交。',
+      invalidUrl: '输入的 URL 格式不正确。',
+      corsError: '目标服务器拒绝了跨域访问请求。',
+      youtubeSuccess: 'YouTube 预览已加载。'
     }
   },
   en: {
@@ -62,7 +73,7 @@ export const translations = {
     inputFile: 'Local Media Upload',
     btnParse: 'Parse Media',
     btnUpload: 'Upload & Play',
-    playerError: 'Cannot play directly, please download and play locally',
+    playerError: 'Player cannot decode directly; click download icon to play locally.',
     downloadLink: 'Download Media',
     filterLabel: 'Prompt Filter Level',
     filterLevels: {
@@ -90,7 +101,9 @@ export const translations = {
       transcription: 'Transcription (SRT)',
       environment: 'Environment',
       atmosphere: 'Atmosphere',
-      audioElements: 'Audio Elements'
+      audioElements: 'Audio Elements',
+      groundingUrls: 'Reference Sources',
+      combinedOutput: 'Combined Output'
     },
     actions: {
       copy: 'Copy',
@@ -101,9 +114,18 @@ export const translations = {
     status: {
       idle: 'Ready',
       parsing: 'Parsing media...',
-      analyzing: 'AI Analyzing...',
+      analyzing: 'AI Analyzing Remotely (via Search Grounding)...',
+      localAnalyzing: 'AI Analyzing local media stream...',
       error: 'An error occurred',
       success: 'Done'
+    },
+    errors: {
+      platformBlocked: 'Detected platform page (e.g., TikTok/YouTube/Instagram).',
+      remoteAnalysis: 'AI is starting remote analysis mode using Google Search for content details.',
+      analysisAdvice: 'For precise trajectory analysis, downloading and using "Local Upload" is recommended.',
+      invalidUrl: 'The entered URL format is invalid.',
+      corsError: 'Target server refused cross-origin request.',
+      youtubeSuccess: 'YouTube preview loaded.'
     }
   }
 };
