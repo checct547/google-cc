@@ -1,5 +1,5 @@
 {
-  "name": "copy-of-audio/video-prompt-acquisition-tool",
+  "name": "音视图提示词提取器",
   "private": true,
   "version": "0.0.0",
   "type": "module",

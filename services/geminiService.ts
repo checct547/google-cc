@@ -2,132 +2,111 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { FilterLevel, OutputSettings, AnalysisResult, Language } from "../types";
 
-const API_KEY = process.env.API_KEY || "";
-
 export class GeminiService {
-  private ai: GoogleGenAI;
-
-  constructor() {
-    this.ai = new GoogleGenAI({ apiKey: API_KEY });
-  }
-
+  // Returns a description string based on the selected filter level and custom keywords.
+  // This provides context for the safety instructions in the Gemini prompt.
   private getFilterDescription(level: FilterLevel, custom: string, lang: Language): string {
     const isZh = lang === 'zh';
     let base = "";
     switch (level) {
       case FilterLevel.GENERAL:
-        base = isZh ? "替换看似中性但常触发审核的敏感词汇。" : "Replace neutral words that often trigger audits.";
+        base = isZh ? "中性但可能触发审核的词汇。" : "Neutral words that might trigger audits.";
         break;
       case FilterLevel.STRICT:
-        base = isZh ? "严格过滤并替换：人体过度接触、私密空间双人过度互动、过度暧昧动作、过度身体描写。" : "Strictly filter and replace: excessive physical contact, intimate space interaction, ambiguous actions, body descriptions.";
+        base = isZh ? "人体过度接触、暧昧动作、过度身体描写等高敏感内容。" : "Excessive physical contact, ambiguous actions, detailed body descriptions.";
         break;
       case FilterLevel.EXTREME:
-        base = isZh ? "极限过滤并清洗：1.未成年相关 2.明确色情 3.极端暴力 4.恐怖主义 5.性暗示 6.裸露 7.人物不当行为 8.非法行为 9.自残 10.侵犯隐私。" : "Extreme filtering: 1.Minors 2.Pornography 3.Extreme violence 4.Terrorism 5.Sexual suggestion 6.Nudity 7.Misconduct 8.Illegal acts 9.Self-harm 10.Privacy.";
+        base = isZh ? "包含未成年人、色情、极端暴力、恐怖主义、非法行为等极端内容。" : "Extreme content including minors, pornography, extreme violence, terrorism, illegal acts.";
         break;
       default:
-        base = isZh ? "常规审核逻辑。" : "Standard audit logic.";
+        base = isZh ? "无特殊过滤要求。" : "No special filtering requirements.";
     }
-    return `${base} ${custom ? `${isZh ? '附加自定义过滤' : 'Additional filters'}: ${custom}` : ""}`;
+    const customPrompt = custom ? (isZh ? `额外过滤关键词: ${custom}` : `Additional filter keywords: ${custom}`) : "";
+    return `${base} ${customPrompt}`.trim();
   }
 
+  /**
+   * Performs deep analysis of media (image, audio, or video) using Gemini 3 Pro.
+   */
   async analyzeMedia(
-    media: { data?: string; mimeType?: string; url?: string },
+    mediaData: { data: string; mimeType: string },
     settings: OutputSettings,
     filterLevel: FilterLevel,
     customFilter: string,
     lang: Language,
-    transcribeOnly: boolean = false
+    transcribeOnly: boolean
   ): Promise<AnalysisResult> {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const isZh = lang === 'zh';
-    const targetLang = isZh ? 'Chinese' : 'English';
     const filterDesc = this.getFilterDescription(filterLevel, customFilter, lang);
 
-    const schemaProperties: any = {};
+    const properties: Record<string, any> = {};
+    const srtExample = "1\n00:00:00,000 --> 00:00:05,360\n文本内容";
+    const fieldMap: Record<string, string> = {
+      duration: isZh ? "媒体时长" : "Media duration",
+      style: isZh ? "艺术/视频风格" : "Artistic/Video style",
+      textInMedia: isZh ? "媒体中的文字" : "Text appearing in media",
+      roles: isZh ? "角色或主要物体" : "Roles or main objects",
+      dialogue: isZh ? "人物台词/对白" : "Dialogues/Speech",
+      actionProcess: isZh ? "动作过程描述" : "Action process description",
+      actionTrajectory: isZh ? "动作轨迹分析" : "Action trajectory analysis",
+      cameraProcess: isZh ? "镜头移动/运镜过程" : "Camera movement process",
+      cameraTrajectory: isZh ? "镜头轨迹描述" : "Camera trajectory description",
+      transcription: isZh 
+        ? `语音转录。必须严格遵循 SRT 格式，示例：\n${srtExample}` 
+        : `Audio transcription. Must strictly follow SRT format, example:\n${srtExample}`,
+      environment: isZh ? "所处环境描述" : "Environment description",
+      atmosphere: isZh ? "画面/音频氛围" : "Visual/Audio atmosphere",
+      audioElements: isZh ? "音效/音乐元素" : "Sound effects/Music elements",
+    };
+
     if (transcribeOnly) {
-      schemaProperties.transcription = { 
-        type: Type.STRING, 
-        description: `SRT format transcription, MUST BE TRANSLATED TO ${targetLang}` 
-      };
+      properties.transcription = { type: Type.STRING, description: fieldMap.transcription };
     } else {
-      if (settings.duration) schemaProperties.duration = { type: Type.STRING };
-      if (settings.style) schemaProperties.style = { type: Type.STRING };
-      if (settings.textInMedia) schemaProperties.textInMedia = { type: Type.STRING };
-      if (settings.roles) schemaProperties.roles = { type: Type.STRING };
-      if (settings.dialogue) schemaProperties.dialogue = { type: Type.STRING };
-      if (settings.actionProcess) schemaProperties.actionProcess = { type: Type.STRING };
-      if (settings.actionTrajectory) schemaProperties.actionTrajectory = { type: Type.STRING };
-      if (settings.cameraProcess) schemaProperties.cameraProcess = { type: Type.STRING };
-      if (settings.cameraTrajectory) schemaProperties.cameraTrajectory = { type: Type.STRING };
-      if (settings.transcription) {
-        schemaProperties.transcription = { 
-          type: Type.STRING, 
-          description: `SRT format transcription, MUST BE TRANSLATED TO ${targetLang}` 
-        };
-      }
-      if (settings.environment) schemaProperties.environment = { type: Type.STRING };
-      if (settings.atmosphere) schemaProperties.atmosphere = { type: Type.STRING };
-      if (settings.audioElements) schemaProperties.audioElements = { type: Type.STRING };
-    }
-
-    const systemInstruction = `You are a world-class AI media analyst. 
-    ${media.url ? 'A URL has been provided. You MUST use Google Search to find as much information as possible about the media at this URL.' : 'A direct media stream has been provided.'}
-    Focus on extracting:
-    1. Visual Action Trajectories: How characters or objects move in 3D space.
-    2. Camera Movement: Panning, tilting, zooming, tracking shots.
-    3. Motion Details: Specific physics or dynamics of the actions.
-    4. Content Details: Character descriptions, environment, and atmosphere.
-    
-    Output Language: ${targetLang}. 
-    IMPORTANT: All text in the JSON output, including transcription/dialogue in SRT, MUST be in ${targetLang}.
-    Filtering & Cleaning: ${filterDesc}. Automatically replace sensitive terms with safe, neutral alternatives.
-    Timeline Feature: ${settings.includeTimeline ? "Use timestamps in [00:00:00] format." : "No timestamps."}
-    Return result strictly as JSON.`;
-
-    const contents: any[] = [];
-    if (media.data && media.mimeType) {
-      contents.push({
-        parts: [
-          { inlineData: { data: media.data, mimeType: media.mimeType } },
-          { text: transcribeOnly ? `Transcribe and translate to ${targetLang}.` : `Generate full visual prompt analysis in ${targetLang}.` }
-        ]
-      });
-    } else if (media.url) {
-      contents.push({
-        parts: [
-          { text: `The media is located at: ${media.url}. Use Google Search Grounding to analyze the visual content, motion trajectories, and soundscape of this specific media. Return the analysis in ${targetLang}.` }
-        ]
+      (Object.keys(fieldMap) as Array<keyof typeof fieldMap>).forEach(key => {
+        if (settings[key as keyof OutputSettings] !== false) {
+          properties[key] = { type: Type.STRING, description: fieldMap[key] };
+        }
       });
     }
 
-    const response = await this.ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents,
+    const systemInstruction = isZh 
+      ? `你是一个专业的媒体分析专家。请根据提供的媒体内容进行深度解析。
+         安全过滤策略：${filterDesc}
+         关于转录：必须严格使用 SRT 格式输出，包含索引序号、时间轴(00:00:00,000 --> 00:00:00,000)和内容。
+         ${settings.includeTimeline ? "分析结果中必须包含精确的时间轴。" : ""}
+         必须严格以 JSON 格式返回结果。`
+      : `You are a professional media analysis expert. Deeply analyze the provided media content.
+         Safety Filtering Strategy: ${filterDesc}
+         Transcription: Must strictly use SRT format output, including index number, timeline (00:00:00,000 --> 00:00:00,000), and content.
+         ${settings.includeTimeline ? "Analysis results must include precise timestamps." : ""}
+         You must return the results in strict JSON format.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3-pro-preview",
+      contents: [
+        {
+          parts: [
+            { inlineData: mediaData },
+            { text: isZh ? "解析此媒体并按属性返回 JSON 报告。确保 transcription 字段内容严格遵循 SRT 格式示例。" : "Analyze this media and return a JSON report. Ensure the transcription field strictly follows the SRT format example." }
+          ]
+        }
+      ],
       config: {
         systemInstruction,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
-          properties: schemaProperties,
-          required: Object.keys(schemaProperties)
-        },
-        tools: media.url ? [{ googleSearch: {} }] : undefined
+          properties
+        }
       }
     });
 
     try {
-      const parsed = JSON.parse(response.text || "{}");
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      if (groundingChunks) {
-        parsed.groundingUrls = groundingChunks
-          .filter((chunk: any) => chunk.web)
-          .map((chunk: any) => ({
-            uri: chunk.web.uri,
-            title: chunk.web.title
-          }));
-      }
-      return parsed;
+      const text = response.text || "{}";
+      return JSON.parse(text);
     } catch (e) {
-      console.error("Analysis Error", e);
+      console.error("Gemini Analysis Parsing Error:", e);
       return {};
     }
   }

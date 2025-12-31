@@ -39,7 +39,6 @@ export interface AnalysisResult {
   environment?: string;
   atmosphere?: string;
   audioElements?: string;
-  groundingUrls?: Array<{ uri: string; title: string }>;
 }
 
 export type MediaSourceType = 'sora' | 'youtube' | 'url' | 'file';

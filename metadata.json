@@ -1,5 +1,5 @@
 {
-  "name": "Copy of Audio/Video Prompt Acquisition Tool",
+  "name": "音视图提示词提取器",
   "description": "A high-performance tool for extracting detailed media prompts, descriptions, and transcripts from URLs and local files using Gemini AI.",
   "requestFramePermissions": [
     "camera",
