@@ -1,6 +1,6 @@
 {
-  "name": "音视图提示词提取器",
-  "description": "A high-performance tool for extracting detailed media prompts, descriptions, and transcripts from URLs and local files using Gemini AI.",
+  "name": "Audio/Video Prompt AI Pro",
+  "description": "基于 Gemini 3.0 Pro 的高阶多模态媒体提示词解析引擎，专为生物力学捕捉、运镜分析与语音转录设计。",
   "requestFramePermissions": [
     "camera",
     "microphone"
