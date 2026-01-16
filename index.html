@@ -4,20 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音频视频获取提示 - Audio/Video Prompt AI</title>
+    <title>音频视频获取提示 - Audio/Video Prompt Acquisition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --brand-primary: #6366f1;
-            --brand-secondary: #8b5cf6;
-            --brand-bg: #0f172a;
+            --brand-bg: #0b0f1a;
         }
         body {
             background-color: var(--brand-bg);
             background-image: 
-                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(14, 165, 233, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 60%);
             color: #f1f5f9;
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -30,40 +30,29 @@
             width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.02);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.3);
+            background: rgba(99, 102, 241, 0.2);
             border-radius: 10px;
         }
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(23, 28, 41, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
-        .glow-button {
-            position: relative;
-            overflow: hidden;
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .glow-button::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s;
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(99, 102, 241, 0.5);
         }
-        .glow-button:hover::after {
-            opacity: 1;
-        }
-        .input-glow:focus {
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
-            border-color: rgba(99, 102, 241, 0.5);
+        .btn-primary:active {
+            transform: translateY(0);
         }
         @keyframes aurora {
             from { background-position: 0% 50%; }
