@@ -3,8 +3,6 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { FilterLevel, OutputSettings, AnalysisResult, Language } from "../types";
 
 export class GeminiService {
-  // Returns a description string based on the selected filter level and custom keywords.
-  // This provides context for the safety instructions in the Gemini prompt.
   private getFilterDescription(level: FilterLevel, custom: string, lang: Language): string {
     const isZh = lang === 'zh';
     let base = "";
@@ -25,9 +23,6 @@ export class GeminiService {
     return `${base} ${customPrompt}`.trim();
   }
 
-  /**
-   * Performs deep analysis of media (image, audio, or video) using Gemini 3 Pro.
-   */
   async analyzeMedia(
     mediaData: { data: string; mimeType: string },
     settings: OutputSettings,
@@ -42,22 +37,41 @@ export class GeminiService {
 
     const properties: Record<string, any> = {};
     const srtExample = "1\n00:00:00,000 --> 00:00:05,360\n文本内容";
+    
+    // Formatting directive for timeline
+    const timelineInstruction = settings.includeTimeline 
+      ? (isZh ? "（必须细分时间轴，以 [MM:SS] 为索引描述每一个动作的起承转合）" : " (Must use granular [MM:SS] timestamps to index every phase of the movement)")
+      : "";
+
     const fieldMap: Record<string, string> = {
-      duration: isZh ? "媒体时长" : "Media duration",
-      style: isZh ? "艺术/视频风格" : "Artistic/Video style",
-      textInMedia: isZh ? "媒体中的文字" : "Text appearing in media",
-      roles: isZh ? "角色或主要物体" : "Roles or main objects",
-      dialogue: isZh ? "人物台词/对白" : "Dialogues/Speech",
-      actionProcess: isZh ? "动作过程描述" : "Action process description",
-      actionTrajectory: isZh ? "动作轨迹分析" : "Action trajectory analysis",
-      cameraProcess: isZh ? "镜头移动/运镜过程" : "Camera movement process",
-      cameraTrajectory: isZh ? "镜头轨迹描述" : "Camera trajectory description",
+      durationTransitions: isZh ? "时长与转场点：分析视频总长度及关键剪辑/转场点" : "Duration & Transitions",
+      rolesObjects: isZh ? "角色与物品分类：识别画面中的主要人物角色、物品资产及其类别" : "Roles & Object assets",
+      actionTrajectory: isZh ? "动作位移轨迹：描述动态物体的空间移动路径与方向" : "Action trajectory in space",
+      artVisualStyle: isZh ? "艺术 with 视觉风格：分析画面构图、色彩、灯光、视觉流派" : "Artistic and visual style",
+      dialogueEmotions: isZh ? "台词与情感标注：语音内容及其背后的心理情绪倾向" : "Dialogue content and emotional tone",
+      cinematographyTech: isZh ? "专业运镜技术：推拉摇移等摄影技术与焦段运用" : "Professional cinematography techniques",
+      physicalEnvironment: isZh ? "物理环境建模：描述场景的地理位置、空间结构与环境特性" : "Physical environment and spatial modeling",
+      textRecognition: isZh ? "文字内容识别：画面中出现的任何文字、标题、标牌等 OCR 信息" : "Text recognition (OCR)",
+      actionPhysicality: isZh ? "动作物理过程：动作的力学表现、速度感、碰撞及物理逻辑" : "Physical process of actions",
+      cameraPathing: isZh ? "镜头视点轨迹：相机在三维空间中的视点移动路径" : "Camera viewpoint pathing",
       transcription: isZh 
         ? `语音转录。必须严格遵循 SRT 格式，示例：\n${srtExample}` 
         : `Audio transcription. Must strictly follow SRT format, example:\n${srtExample}`,
-      environment: isZh ? "所处环境描述" : "Environment description",
-      atmosphere: isZh ? "画面/音频氛围" : "Visual/Audio atmosphere",
-      audioElements: isZh ? "音效/音乐元素" : "Sound effects/Music elements",
+      psychologicalAtmosphere: isZh ? "心理氛围分析：视听语言营造的整体意境与心理感受" : "Psychological atmosphere analysis",
+      audioLayering: isZh ? "音频分层解析：对环境背景音、配乐、特效音进行拆解说明" : "Audio layer analysis",
+      limbMovements: isZh 
+        ? `肢体动作超深度捕捉：极度详尽地描述肢体的动力学特征、关节轴向变化、肌肉爆发力感。${timelineInstruction}` 
+        : `Ultra-Deep Limb Capture: Detailed kinetic analysis of limbs, joint axial shifts, and muscular explosive force.${timelineInstruction}`,
+      bodyMovements: isZh ? "躯体动作：分析人物躯干、姿态及整体身体律动" : "Body Movements: torso actions, posture, and overall body movement",
+      facialExpressions: isZh 
+        ? "深层表情解析：捕捉微表情、肌肉张力、情绪转换的瞬时变化。" 
+        : "Deep Facial Expression Analysis: Capture micro-expressions, muscle tension, and emotional transitions.",
+      eyeDetail: isZh 
+        ? `眼神动作极致深度捕捉：除虹膜外，必须细分描述：1.[扫视模式(Saccade)]（眼球跳跃频率与路径）；2.[注视深度(Fixation)]（视觉焦点停留时长与目标）；3.[眼周联动]（眼轮匝肌微动与神态关联）。${timelineInstruction}` 
+        : `Extreme Gaze Detail Capture: Must break down into: 1.[Saccade Patterns] (frequency and path); 2.[Fixation Depth] (target and duration); 3.[Periocular Coordination] (muscle interaction).${timelineInstruction}`,
+      naturalLanguageSummary: isZh 
+        ? `自然语言综合描述：请根据此媒体的所有特征提供一个约 ${settings.wordCount} 字左右的综合性叙述。` 
+        : `Natural Language Synthesis: Please provide a cohesive narrative description of about ${settings.wordCount} words based on all media characteristics.`
     };
 
     if (transcribeOnly) {
@@ -71,16 +85,26 @@ export class GeminiService {
     }
 
     const systemInstruction = isZh 
-      ? `你是一个专业的媒体分析专家。请根据提供的媒体内容进行深度解析。
+      ? `你是一个顶尖的生物力学与视觉分析专家。请根据提供的媒体内容进行极致细致的解析。
          安全过滤策略：${filterDesc}
-         关于转录：必须严格使用 SRT 格式输出，包含索引序号、时间轴(00:00:00,000 --> 00:00:00,000)和内容。
-         ${settings.includeTimeline ? "分析结果中必须包含精确的时间轴。" : ""}
+         
+         核心要求：
+         1. 眼神与肢体捕捉：必须达到解剖学级别的描述深度。
+         2. 时间轴同步：如果启用了时间轴，描述必须按 [MM:SS] 逐秒或逐关键帧进行序列化描述，禁止模糊概括。
+         3. 眼神细分：必须明确区分扫视（快速跳跃）和注视（长时停留）的具体规律。
+         
+         关于转录：必须严格使用 SRT 格式输出。
          必须严格以 JSON 格式返回结果。`
-      : `You are a professional media analysis expert. Deeply analyze the provided media content.
-         Safety Filtering Strategy: ${filterDesc}
-         Transcription: Must strictly use SRT format output, including index number, timeline (00:00:00,000 --> 00:00:00,000), and content.
-         ${settings.includeTimeline ? "Analysis results must include precise timestamps." : ""}
-         You must return the results in strict JSON format.`;
+      : `You are a premier biomechanical and visual analysis expert. Provide extreme detail.
+         Safety Strategy: ${filterDesc}
+         
+         CORE REQUIREMENTS:
+         1. Gaze & Limb Capture: Descriptions must reach anatomical depth.
+         2. Timeline Sync: If enabled, descriptions must be serialized using [MM:SS] for specific sub-actions. No vague summaries.
+         3. Gaze Segmentation: Clearly distinguish between Saccades (rapid jumps) and Fixations (prolonged focus).
+         
+         Transcription: Must strictly follow SRT format.
+         You must return results in strict JSON format.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
@@ -88,7 +112,7 @@ export class GeminiService {
         {
           parts: [
             { inlineData: mediaData },
-            { text: isZh ? "解析此媒体并按属性返回 JSON 报告。确保 transcription 字段内容严格遵循 SRT 格式示例。" : "Analyze this media and return a JSON report. Ensure the transcription field strictly follows the SRT format example." }
+            { text: isZh ? "请对媒体进行极深层生物力学捕捉。特别针对肢体动作和眼神眼神，按照细分的时间轴节点提供详细的子项分析。" : "Perform ultra-deep biomechanical capture. Specifically for limb movements and gaze, provide detailed sub-analysis indexed by granular timeline nodes." }
           ]
         }
       ],

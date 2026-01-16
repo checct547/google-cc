@@ -9,36 +9,47 @@ export enum FilterLevel {
 }
 
 export interface OutputSettings {
-  duration: boolean;
-  style: boolean;
-  textInMedia: boolean;
-  roles: boolean;
-  dialogue: boolean;
-  actionProcess: boolean;
+  durationTransitions: boolean;
+  rolesObjects: boolean;
   actionTrajectory: boolean;
-  cameraProcess: boolean;
-  cameraTrajectory: boolean;
+  artVisualStyle: boolean;
+  dialogueEmotions: boolean;
+  cinematographyTech: boolean;
+  physicalEnvironment: boolean;
+  textRecognition: boolean;
+  actionPhysicality: boolean;
+  cameraPathing: boolean;
   transcription: boolean;
-  environment: boolean;
-  atmosphere: boolean;
-  audioElements: boolean;
+  psychologicalAtmosphere: boolean;
+  audioLayering: boolean;
+  limbMovements: boolean;
+  bodyMovements: boolean;
+  facialExpressions: boolean;
+  eyeDetail: boolean;
   includeTimeline: boolean;
+  naturalLanguageSummary: boolean;
+  wordCount: number;
 }
 
 export interface AnalysisResult {
-  duration?: string;
-  style?: string;
-  textInMedia?: string;
-  roles?: string;
-  dialogue?: string;
-  actionProcess?: string;
+  durationTransitions?: string;
+  rolesObjects?: string;
   actionTrajectory?: string;
-  cameraProcess?: string;
-  cameraTrajectory?: string;
+  artVisualStyle?: string;
+  dialogueEmotions?: string;
+  cinematographyTech?: string;
+  physicalEnvironment?: string;
+  textRecognition?: string;
+  actionPhysicality?: string;
+  cameraPathing?: string;
   transcription?: string; // SRT format
-  environment?: string;
-  atmosphere?: string;
-  audioElements?: string;
+  psychologicalAtmosphere?: string;
+  audioLayering?: string;
+  limbMovements?: string;
+  bodyMovements?: string;
+  facialExpressions?: string;
+  eyeDetail?: string;
+  naturalLanguageSummary?: string;
 }
 
 export type MediaSourceType = 'sora' | 'youtube' | 'url' | 'file';
